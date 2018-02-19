@@ -217,14 +217,16 @@ private:
 	Void readSerialUpdate(Object^,ProgressChangedEventArgs^ e){
 		unsigned char c=e->ProgressPercentage;
 		char hex[10];
-		sprintf_s(hex,"0x%02x, %3u",c,c);
+		if((c&0x80)!=0)sprintf_s(hex,"0x%02x, %3u",c,c&0x7f);//ignore first bit when getting decimal interpretation
+		else sprintf_s(hex,"0x%02x,    ",c);
 		String^ hexstr=gcnew String(hex);
 		String^ binstr=gcnew String(std::bitset<sizeof(c) * 8>(c).to_string().c_str());
 		String^ schar = (gcnew Char(c))->ToString();
-		c=((0x30&c)>>1)|(7&c);
-		sprintf_s(hex,"%02x",c);
+		unsigned char rc=((0x30&c)>>1)|(7&c);
+		sprintf_s(hex,"%02x",rc);
 		String^ r=gcnew String(hex);
-		serialRecv->AppendText(binstr+", R=0x"+r+", "+hexstr+", '"+ schar+"'\r\n");
+		if((c&0x80)==0)serialRecv->AppendText(binstr+", "+hexstr+", '"+ schar+"'"+", R=0x"+r+ "\r\n");
+		else serialRecv->AppendText(binstr+", "+hexstr+", '"+ schar+"'\r\n");
 	}
 
 	Void readSerial(System::Object^  sender, DoWorkEventArgs^  e ){
